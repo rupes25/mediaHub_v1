@@ -1,0 +1,44 @@
+import {BrowserRouter,Routes, Route} from 'react-router-dom'
+import Login from './common/Login'
+import Signup from './common/Signup'
+import Landing from './common/Landing'
+import Rough from './common/Rough'
+import Homepage from './user/Homepage'
+import BlogCreate from './user/BlogCreate'
+import Feed from './user/Feed'
+import Blog from './user/Blog'
+import ManageBlog from './user/ManageBlog'
+import ProtectedRoute from './components/ProtectedRoute'
+
+const App = () => {
+  return (
+    <BrowserRouter>
+    <Routes>
+
+      {/* common routes */}
+      <Route path='/' element={<Landing/>}/>
+      <Route path='/login' element={<Login/>}/>
+      <Route path='/signup' element={<Signup/>}/>
+
+
+
+
+      <Route path='/rough' element={<Rough/>}/>
+
+      {/* user routes */}
+      <Route path='/home' element={<Homepage/>}/>
+      <Route element={<ProtectedRoute/>}>
+        <Route path='/create' element={<BlogCreate/>}/>
+        <Route path='/feed' element={<Feed/>}/>
+        <Route path='/blogs/:id' element={<Blog/>}/>
+        <Route path='/blog/manage' element={<ManageBlog/>}/>
+      </Route>
+
+
+
+    </Routes>
+    </BrowserRouter>
+  )
+}
+
+export default App
