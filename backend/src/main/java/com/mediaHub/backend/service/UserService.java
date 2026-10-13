@@ -1,5 +1,7 @@
 package com.mediaHub.backend.service;
 
+import com.mediaHub.backend.dto.LoginReq;
+import com.mediaHub.backend.dto.LoginRes;
 import com.mediaHub.backend.dto.RegisterReq;
 import com.mediaHub.backend.dto.RegisterRes;
 import com.mediaHub.backend.model.User;
@@ -9,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Optional;
 
 
 @Service
@@ -21,10 +25,9 @@ public class UserService {
         String fullName = normalize(req.getFullName());
         String email = normalize(req.getEmail());
         String username = normalize(req.getUsername());
-        String password = normalize(req.getPassword());
 
 //        if the incoming value is null then return with a valid response.
-        if(fullName == null || email == null || username == null || password == null){
+        if(fullName == null || email == null || username == null || req.getPassword() == null){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"All fields are important.");
         }
 
@@ -52,7 +55,30 @@ public class UserService {
 
 
 
+    public LoginRes login(LoginReq req,HttpServletResponse response){
+        String emailOrUsername = normalize(req.getEmail());
 
+        if(emailOrUsername == null || req.getPassword() == null){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid login credentials.");
+        }
+
+        emailOrUsername = emailOrUsername.toLowerCase();
+
+       Optional<User> user = userRepository.findByEmail(emailOrUsername);
+       if (user.isEmpty()){
+           user = userRepository.findByUsername(emailOrUsername);
+       }
+
+       if (!req.getPassword().equals(user.get().getPassword())){
+           throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Invalid login credentials.");
+       }
+
+       LoginRes res = new LoginRes();
+       res.setMessage("Login successfully.");
+       return res;
+
+
+    }
 
 
 
