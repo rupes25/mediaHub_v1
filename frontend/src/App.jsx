@@ -27,12 +27,12 @@ const App = () => {
 
       {/* user routes */}
       <Route path='/home' element={<Homepage/>}/>
-      <Route element={<ProtectedRoute/>}>
+      {/*<Route element={<ProtectedRoute/>}>*/}
         <Route path='/create' element={<BlogCreate/>}/>
         <Route path='/feed' element={<Feed/>}/>
         <Route path='/blogs/:id' element={<Blog/>}/>
         <Route path='/blog/manage' element={<ManageBlog/>}/>
-      </Route>
+      {/*</Route>*/}
 
 
 

@@ -7,24 +7,41 @@ import com.mediaHub.backend.dto.RegisterRes;
 import com.mediaHub.backend.model.User;
 import com.mediaHub.backend.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
-
 @Service
-@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final boolean secureCookie;
+
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            @Value("${app.cookie.secure:false}") boolean secureCookie
+    ) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.secureCookie = secureCookie;
+    }
 
     public RegisterRes register(RegisterReq req, HttpServletResponse response) {
 //        to check whether the coming value has some actual value or not.
         String fullName = normalize(req.getFullName());
         String email = normalize(req.getEmail());
         String username = normalize(req.getUsername());
+        String password = normalize(req.getPassword());
 
 //        if the incoming value is null then return with a valid response.
         if(fullName == null || email == null || username == null || req.getPassword() == null){
@@ -44,9 +61,12 @@ public class UserService {
         user.setEmail(req.getEmail());
         user.setUsername(req.getUsername());
         user.setDateOfBirth(req.getDateOfBirth());
-        user.setPassword(req.getPassword());
+        user.setPassword(
+                passwordEncoder.encode(password));
 
         User savedUser = userRepository.save(user);
+
+        setTokenCookie(savedUser, response);
         return mapToDto(savedUser,"User registered successfully.");
 
 
@@ -77,8 +97,48 @@ public class UserService {
        res.setMessage("Login successfully.");
        return res;
 
+    }
+
+
+
+
+    public void logout(HttpServletResponse response){
+        ResponseCookie cookie = ResponseCookie
+                .from("token","")
+                .httpOnly(true)
+                .secure(secureCookie)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                cookie.toString()
+        );
 
     }
+
+    private void setTokenCookie(User user, HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie
+                .from("token", jwtService.generateToken(user))
+                .httpOnly(true)
+                .secure(secureCookie)
+                .path("/")
+                .maxAge(JwtService.TOKEN_TTL)
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+//    public RegisterRes getProfile(Authentication authentication) {
+//        User user = userRepository.findById(authentication.getName())
+//                .orElseThrow(() -> new ResponseStatusException(
+//                        HttpStatus.UNAUTHORIZED, "User account was not found."
+//                ));
+//        return mapToDto(user, "Profile loaded.");
+//    }
 
 
 
